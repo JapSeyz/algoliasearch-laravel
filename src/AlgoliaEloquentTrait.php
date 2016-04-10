@@ -9,13 +9,19 @@ trait AlgoliaEloquentTrait
     /**
      * @var string
      */
-    private static $methodGetName = 'getAlgoliaRecord';
+    private static $methodGetName = 'getSearchRecord';
+
+    /**
+    * @var string
+    */
+    private static $methodRemoveName = 'removeSearchRecord';
 
     /**
      * Static calls.
      *
      * @param bool $safe
      */
+
     public function _reindex($safe = true)
     {
         /** @var \AlgoliaSearch\Laravel\ModelHelper $modelHelper */
@@ -30,7 +36,8 @@ trait AlgoliaEloquentTrait
                 $records = [];
 
                 foreach ($models as $model) {
-                    if ($modelHelper->indexOnly($model, $index->indexName)) {
+
+                    if ( is_array($model->{static::$methodRemoveName}) || $modelHelper->indexOnly($model, $index->indexName)) {
                         $records[] = $model->getAlgoliaRecordDefault();
                     }
                 }
@@ -231,10 +238,20 @@ trait AlgoliaEloquentTrait
             $record = $this->toArray();
         }
 
+        // Remove unwanted search attributes
+        if (is_array($this->{static::$methodRemoveName})) {
+            $remove = $this->{static::$methodRemoveName};
+
+            foreach($remove as $r){
+                
+                unset($record[$r]);
+            }
+        }
+
         if (isset($record['objectID']) == false) {
             $record['objectID'] = $modelHelper->getObjectId($this);
         }
-
+        
         return $record;
     }
 
