@@ -22,7 +22,7 @@ trait AlgoliaEloquentTrait
      * @param bool $safe
      */
 
-    public function _reindex($safe = true)
+    public function _reindex($safe = true, $rows = false)
     {
         /** @var \AlgoliaSearch\Laravel\ModelHelper $modelHelper */
         $modelHelper = App::make('\AlgoliaSearch\Laravel\ModelHelper');
@@ -30,26 +30,32 @@ trait AlgoliaEloquentTrait
         $indices = $modelHelper->getIndices($this);
         $indicesTmp = $safe ? $modelHelper->getIndicesTmp($this) : $indices;
 
-        static::chunk(100, function ($models) use ($indicesTmp, $modelHelper) {
+        static::chunk(100, function ($models) use ($indicesTmp, $modelHelper, $rows) {
+
+            if ($rows) {
+                $models = $rows;
+            }
+
             /** @var \AlgoliaSearch\Index $index */
             foreach ($indicesTmp as $index) {
                 $records = [];
 
                 foreach ($models as $model) {
 
-                    if ( is_array($model->{static::$methodRemoveName}) || $modelHelper->indexOnly($model, $index->indexName)) {
+                    if (is_array($model->{static::$methodRemoveName})
+                        || $modelHelper->indexOnly($model, $index->indexName)
+                    ) {
                         $records[] = $model->getAlgoliaRecordDefault();
                     }
                 }
 
                 $index->addObjects($records);
             }
-
         });
 
         if ($safe) {
             for ($i = 0; $i < count($indices); $i++) {
-                $modelHelper->algolia->moveIndex($indicesTmp[$i]->indexName, $indices[$i]->indexName);
+                $modelHelper->algolia->moveIndex($indicesTmp[ $i ]->indexName, $indices[ $i ]->indexName);
             }
         }
     }
