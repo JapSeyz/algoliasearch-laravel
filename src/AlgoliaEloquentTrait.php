@@ -12,9 +12,9 @@ trait AlgoliaEloquentTrait
     private static $methodGetName = 'getSearchRecord';
 
     /**
-    * @var string
-    */
-    private static $methodRemoveName = 'removeSearchRecord';
+     * @var string
+     */
+    private static $methodKeepName = 'keepSearchRecord';
 
     /**
      * Static calls.
@@ -87,11 +87,11 @@ trait AlgoliaEloquentTrait
 
         $index = null;
 
-        if (isset($parameters['index'])) {
-            $index = $modelHelper->getIndices($this, $parameters['index'])[0];
-            unset($parameters['index']);
+        if (isset($parameters[ 'index' ])) {
+            $index = $modelHelper->getIndices($this, $parameters[ 'index' ])[ 0 ];
+            unset($parameters[ 'index' ]);
         } else {
-            $index = $modelHelper->getIndices($this)[0];
+            $index = $modelHelper->getIndices($this)[ 0 ];
         }
 
         $result = $index->browseFrom($query, $parameters, $cursor);
@@ -112,11 +112,11 @@ trait AlgoliaEloquentTrait
 
         $index = null;
 
-        if (isset($parameters['index'])) {
-            $index = $modelHelper->getIndices($this, $parameters['index'])[0];
-            unset($parameters['index']);
+        if (isset($parameters[ 'index' ])) {
+            $index = $modelHelper->getIndices($this, $parameters[ 'index' ])[ 0 ];
+            unset($parameters[ 'index' ]);
         } else {
-            $index = $modelHelper->getIndices($this)[0];
+            $index = $modelHelper->getIndices($this)[ 0 ];
         }
 
         $result = $index->browse($query, $parameters);
@@ -137,11 +137,11 @@ trait AlgoliaEloquentTrait
 
         $index = null;
 
-        if (isset($parameters['index'])) {
-            $index = $modelHelper->getIndices($this, $parameters['index'])[0];
-            unset($parameters['index']);
+        if (isset($parameters[ 'index' ])) {
+            $index = $modelHelper->getIndices($this, $parameters[ 'index' ])[ 0 ];
+            unset($parameters[ 'index' ]);
         } else {
-            $index = $modelHelper->getIndices($this)[0];
+            $index = $modelHelper->getIndices($this)[ 0 ];
         }
 
         $result = $index->search($query, $parameters);
@@ -158,37 +158,38 @@ trait AlgoliaEloquentTrait
         $indices = $modelHelper->getIndices($this);
 
         $slaves_settings = $modelHelper->getSlavesSettings($this);
-        $slaves = isset($settings['slaves']) ? $settings['slaves'] : [];
+        $slaves = isset($settings[ 'slaves' ]) ? $settings[ 'slaves' ] : [];
 
         $b = true;
 
         /** @var \AlgoliaSearch\Index $index */
         foreach ($indices as $index) {
 
-            if ($b && isset($settings['slaves'])) {
-                $settings['slaves'] = array_map(function ($indexName) use ($modelHelper) {
+            if ($b && isset($settings[ 'slaves' ])) {
+                $settings[ 'slaves' ] = array_map(function ($indexName) use ($modelHelper) {
                     return $modelHelper->getFinalIndexName($this, $indexName);
-                }, $settings['slaves']);
+                }, $settings[ 'slaves' ]);
             }
 
             if (count(array_keys($settings)) > 0) {
                 $index->setSettings($settings);
             }
 
-            if ($b && isset($settings['slaves'])) {
+            if ($b && isset($settings[ 'slaves' ])) {
                 $b = false;
-                unset($settings['slaves']);
+                unset($settings[ 'slaves' ]);
             }
         }
 
         foreach ($slaves as $slave) {
-            if (isset($slaves_settings[$slave])) {
-                $index = $modelHelper->getIndices($this, $slave)[0];
+            if (isset($slaves_settings[ $slave ])) {
+                $index = $modelHelper->getIndices($this, $slave)[ 0 ];
 
-                $s = array_merge($settings, $slaves_settings[$slave]);
+                $s = array_merge($settings, $slaves_settings[ $slave ]);
 
-                if (count(array_keys($s)) > 0)
+                if (count(array_keys($s)) > 0) {
                     $index->setSettings($s);
+                }
             }
         }
     }
@@ -196,12 +197,13 @@ trait AlgoliaEloquentTrait
     /**
      * @param $method
      * @param $parameters
+     *
      * @return mixed
      */
     public static function __callStatic($method, $parameters)
     {
         $instance = new static();
-        $overload_method = '_'.$method;
+        $overload_method = '_' . $method;
 
         if (method_exists($instance, $overload_method)) {
             return call_user_func_array([$instance, $overload_method], $parameters);
@@ -213,13 +215,14 @@ trait AlgoliaEloquentTrait
     /**
      * @param $method
      * @param $parameters
+     *
      * @return mixed
      *
      * Catch static calls call from within a class. Example : static::method();
      */
     public function __call($method, $parameters)
     {
-        $overload_method = '_'.$method;
+        $overload_method = '_' . $method;
 
         if (method_exists($this, $overload_method)) {
             return call_user_func_array([$this, $overload_method], $parameters);
@@ -245,19 +248,18 @@ trait AlgoliaEloquentTrait
         }
 
         // Remove unwanted search attributes
-        if (is_array($this->{static::$methodRemoveName})) {
-            $remove = $this->{static::$methodRemoveName};
+        if (is_array($this->{static::$methodKeepName})) {
+            $keep = array_flip($this->{static::$methodKeepName});
 
-            foreach($remove as $r){
-                
-                unset($record[$r]);
-            }
+            $record = $record->filter(function ($value, $key) use ($keep) {
+                return array_key_exists($key, $keep);
+            });
         }
 
-        if (isset($record['objectID']) == false) {
-            $record['objectID'] = $modelHelper->getObjectId($this);
+        if (isset($record[ 'objectID' ]) == false) {
+            $record[ 'objectID' ] = $modelHelper->getObjectId($this);
         }
-        
+
         return $record;
     }
 
