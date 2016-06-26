@@ -251,7 +251,7 @@ trait AlgoliaEloquentTrait
         if (is_array($this->{static::$methodKeepName})) {
             $keep = array_flip($this->{static::$methodKeepName});
 
-            $record = $record->filter(function ($value, $key) use ($keep) {
+            $record = collect($record)->filter(function ($value, $key) use ($keep) {
                 return array_key_exists($key, $keep);
             });
         }
