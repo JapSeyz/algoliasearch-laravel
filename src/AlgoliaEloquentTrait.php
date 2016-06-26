@@ -42,7 +42,7 @@ trait AlgoliaEloquentTrait
 
                 foreach ($models as $model) {
 
-                    if (is_array($model->{static::$methodRemoveName})
+                    if (is_array($model->{static::$methodKeepName})
                         || $modelHelper->indexOnly($model, $index->indexName)
                     ) {
                         $records[] = $model->getAlgoliaRecordDefault();
